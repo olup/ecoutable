@@ -31,6 +31,12 @@
 - Centralize shared logic in service modules
 - Keep API/tRPC handlers thin, delegating to services
 - Async operations should use status tracking for better UX
+- Use tRPC exclusively for API endpoints - no REST endpoints
+- Client uses wouter for routing with a SPA architecture
+- Article sharing follows /share?url=<encoded-url> pattern
+- Use tRPC exclusively for API endpoints - no REST endpoints
+- Client uses wouter for routing with a SPA architecture
+- Article sharing follows /share?url=<encoded-url> pattern
 - Prefer simple, working solutions over premature optimizations
 - Use existing libraries as intended unless there's a clear performance bottleneck
 - `api/`: Backend API code
