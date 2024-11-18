@@ -5,6 +5,14 @@
 - Source files in `src/` directory
 - Compiled output in `dist/` directory
 
+## Documentation Requirements
+- Maintain README.md with:
+  - Project overview and purpose
+  - Setup instructions
+  - Development commands
+  - API documentation if applicable
+- Keep documentation in sync with code changes
+
 ## Available Scripts
 - `npm run build`: Compile TypeScript to JavaScript
 - `npm run start`: Run the compiled JavaScript
@@ -23,6 +31,8 @@
 - Centralize shared logic in service modules
 - Keep API/tRPC handlers thin, delegating to services
 - Async operations should use status tracking for better UX
+- Prefer simple, working solutions over premature optimizations
+- Use existing libraries as intended unless there's a clear performance bottleneck
 - `api/`: Backend API code
   - `services/`: Shared business logic and utilities
   - Handlers should be thin layers over services
