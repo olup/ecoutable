@@ -5,6 +5,10 @@ export const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
       url: '/api/trpc',
+      fetch: (url, options) => fetch(url, {
+        ...options,
+        credentials: 'same-origin'
+      })
     }),
   ],
 })

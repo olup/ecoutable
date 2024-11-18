@@ -1,0 +1,16 @@
+name = "article-processor"
+compatibility_date = "2024-01-01"
+
+[site]
+bucket = "./dist"
+
+[build]
+command = "npm run build:client"
+
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "article-storage"
+
+[vars]
+DATABASE_URL = ""
+OPENAI_API_KEY = ""

@@ -1,12 +1,11 @@
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import { router } from '.'
 
-const handler = (req: Request) =>
-  fetchRequestHandler({
+export function onRequest(context: any) {
+  return fetchRequestHandler({
     endpoint: '/api/trpc',
-    req,
+    req: context.request,
     router,
     createContext: () => ({}),
   })
-
-export { handler as GET, handler as POST }
+}
