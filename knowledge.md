@@ -31,6 +31,16 @@
 - Centralize shared logic in service modules
 - Keep API/tRPC handlers thin, delegating to services
 - Async operations should use status tracking for better UX
+- Build as PWA for installable app experience
+  - Requires manifest.json and service worker
+  - Consider offline-first approach where possible
+  - Cache assets and API responses appropriately
+  - Support web share target for receiving shared URLs
+  - Handle both direct URL shares and clipboard paste
+- Build as PWA for installable app experience
+  - Requires manifest.json and service worker
+  - Consider offline-first approach where possible
+  - Cache assets and API responses appropriately
 - Use tRPC exclusively for API endpoints - no REST endpoints
 - Client uses wouter for routing with a SPA architecture
 - Article sharing follows /share?url=<encoded-url> pattern
