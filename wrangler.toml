@@ -8,9 +8,12 @@ bucket = "./dist"
 command = "npm run build:client"
 
 [[r2_buckets]]
-binding = "STORAGE"
-bucket_name = "article-storage"
+binding = "ECOUTABLE_BUCKET"
+bucket_name = "ecoutable-bucket"
+
+[[kv_namespaces]]
+binding = "ECOUTABLE_KV"
+id = "ec5a0d0b-c0c7-4f6f-a2c5-f9f8c4b6b9b3"
 
 [vars]
 DATABASE_URL = ""
-OPENAI_API_KEY = ""

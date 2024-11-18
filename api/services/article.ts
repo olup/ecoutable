@@ -1,21 +1,12 @@
-import { EdgeTTS } from "node-edge-tts";
-import { put } from "@vercel/blob";
-import { readFile } from "fs/promises";
 import OpenAI from "openai";
-import { db } from "../db";
-import { articles } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { EdgeTTS } from "../services/tts";
+import { Context } from "../trpc/trpc";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-export async function processArticle(url: string) {
+export async function processArticle(url: string, ctx: Context) {
   // Get markdown from Jina
   const jinaResponse = await fetch(`https://r.jina.ai/${url}`, {
     headers: {
       Accept: "application/json",
-      "X-Retain-Images": "none",
     },
   });
   if (!jinaResponse.ok) {
@@ -25,6 +16,14 @@ export async function processArticle(url: string) {
     title: string;
     content: string;
   };
+
+  const settingsRaw = await ctx.kv.get("settings");
+  const settings = JSON.parse(settingsRaw || "{}");
+
+  const openai = new OpenAI({
+    apiKey: await settings.llm_api_key,
+    baseURL: await settings.llm_api_url,
+  });
 
   // Get summary from OpenAI
   const completion = await openai.chat.completions.create({
@@ -37,53 +36,54 @@ export async function processArticle(url: string) {
   const summary = completion.choices[0]?.message?.content || "";
 
   // Convert to speech
+  const audioUuid = crypto.randomUUID();
   const tts = new EdgeTTS();
-  const tempPath = `/tmp/speech-${Date.now()}.mp3`;
-  await tts.ttsPromise(markdown.content, tempPath);
-  const audioBuffer = await readFile(tempPath);
+  const audioBuffer = await tts.ttsPromise(markdown.content);
+  const audioPath = `articles/${audioUuid}.mp3`;
 
   // Store audio in Vercel Blob
-  const blob = await put(`articles/${Date.now()}.mp3`, audioBuffer, {
-    access: "public",
-    contentType: "audio/mpeg",
-  });
+  await ctx.bucket.put(`articles/${audioPath}.mp3`, audioBuffer);
 
   return {
     url,
-    markdown: markdown.content,
-    audioPath: blob.url,
+    content: markdown.content,
+    audioPath,
     summary,
+    title: markdown.title,
   };
 }
 
-export async function createArticle(url: string) {
+export async function createArticle(url: string, ctx: Context) {
   // Create article in pending state
-  const [article] = await db
-    .insert(articles)
-    .values({
-      url,
-      markdown: "",
-      status: "pending",
-    })
-    .returning();
+  const uuid = crypto.randomUUID();
+  const article = {
+    uuid,
+    url,
+    status: "pending",
+    createdAt: Date.now(),
+    title: "",
+    content: "",
+    summary: "",
+    audiourl: "",
+    version: 0,
+  };
+
+  await ctx.kv.put(`articles/${uuid}`, JSON.stringify(article));
 
   // Process article asynchronously
-  processArticle(url)
+  processArticle(url, ctx)
     .then(async (articleData) => {
-      await db
-        .update(articles)
-        .set({
-          ...articleData,
-          status: "processed",
-        })
-        .where(eq(articles.id, article.id));
+      article.title = articleData.title;
+      article.content = articleData.content;
+      article.summary = articleData.summary;
+      article.audiourl = articleData.audioPath;
+
+      await ctx.kv.put(`articles/${uuid}`, JSON.stringify(article));
     })
     .catch(async (error) => {
-      await db
-        .update(articles)
-        .set({ status: "error" })
-        .where(eq(articles.id, article.id));
-      console.error("Error processing article:", error);
+      article.status = "error";
+      await ctx.kv.put(`articles/${uuid}`, JSON.stringify(article));
+      throw error;
     });
 
   return article;
