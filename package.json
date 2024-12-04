@@ -1,0 +1,25 @@
+{
+  "name": "readability",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.699.0",
+    "@heroicons/react": "^2.2.0",
+    "openai": "^4.73.1",
+    "sst": "3.3.28"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "8.10.145"
+  },
+  "scripts": {
+    "dev": "sst dev --stage dev",
+    "deploy:prod": "sst deploy --stage prod"
+  }
+}
