@@ -15,11 +15,10 @@ export default $config({
     };
   },
   async run() {
-    const dbUrl = new sst.Secret("DbUrl", process.env.DATABASE_URL!);
+    const dbUrl = new sst.Secret("DbUrl");
 
     const openAiApiKey = new sst.Secret(
-      "OpenAiApiKey",
-      process.env.OPENAI_API_KEY!
+      "OpenAiApiKey"
     );
 
     const bucket = new sst.aws.Bucket("ecoutable", {
@@ -29,11 +28,7 @@ export default $config({
     const queue = new sst.aws.Queue("audioWorkerQueue", {});
     queue.subscribe({
       handler: "backend/src/handlers/audioWorkerHandler.handler",
-      link: [bucket],
-      environment: {
-        DATABASE_URL: dbUrl.value,
-        OPENAI_API_KEY: openAiApiKey.value,
-      },
+      link: [bucket, openAiApiKey, dbUrl],
       nodejs: {
         install: [
           "jsdom",
@@ -65,10 +60,9 @@ export default $config({
           keepNames: true,
         },
       },
-      link: [bucket, queue],
+      link: [bucket, queue, openAiApiKey, dbUrl],
       environment: {
-        DATABASE_URL: dbUrl.value,
-        OPENAI_API_KEY: openAiApiKey.value,
+        isDev: $dev ? "true" : "false",
       },
     });
 

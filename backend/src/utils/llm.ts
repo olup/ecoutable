@@ -1,6 +1,7 @@
 import { OpenAI } from "openai";
+import { Resource } from "sst";
 
-const openAI = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openAI = new OpenAI({ apiKey: Resource.OpenAiApiKey.value });
 
 export const askLlm = async (prompt: string, model = "gpt-4o-mini") => {
   const response = await openAI.chat.completions.create({

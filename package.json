@@ -12,6 +12,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.699.0",
     "@heroicons/react": "^2.2.0",
+    "dotenv": "^16.4.7",
     "openai": "^4.73.1",
     "sst": "3.3.28"
   },
@@ -19,7 +20,7 @@
     "@types/aws-lambda": "8.10.145"
   },
   "scripts": {
-    "dev": "sst dev --stage dev",
+    "dev": "sst dev --stage prod",
     "deploy:prod": "sst deploy --stage prod"
   }
 }

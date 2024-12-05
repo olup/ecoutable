@@ -1,20 +1,19 @@
-import puppeteer from "puppeteer-core";
-import chromium from "@sparticuz/chromium";
 import { Readability } from "@mozilla/readability";
+import chromium from "@sparticuz/chromium";
+import { writeFile } from "fs/promises";
 import { JSDOM } from "jsdom";
-import TurndownService from "turndown";
-import { remark } from "remark";
-import { generateAudio } from "./tts";
-import { MardownTypes } from "./markdownTypes";
+import puppeteer from "puppeteer-core";
 import { Resource } from "sst";
-import { askLlm } from "./llm";
+import TurndownService from "turndown";
 import { extractMetadata } from "./extractMetadata";
+import { askLlm } from "./llm";
+import { writeFileSync } from "fs";
 
 const localChromePath =
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
 const turndown = new TurndownService();
-const isLocal = Resource.App.stage === "dev";
+const isLocal = process.env.isDev === "true";
 console.log("isLocal:", isLocal);
 
 export const getArticle = async (url: string) => {
@@ -41,6 +40,8 @@ export const getArticle = async (url: string) => {
   if (!article) {
     throw new Error("Could not parse article");
   }
+
+  writeFileSync("./article.html", articleHtml);
 
   const markdownContent = turndown.turndown(article.content);
 
