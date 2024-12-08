@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Button,
   Card,
   CardSection,
@@ -8,19 +9,25 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { IconPlayerPlay, IconWand } from "@tabler/icons-react";
-import { useAtom } from "jotai";
+import { IconPlayerPlay, IconTrash, IconWand } from "@tabler/icons-react";
+import { useSetAtom } from "jotai";
 import { FC } from "react";
+import { useLocation } from "wouter";
 import { trpc } from "../lib/trpc";
 import { articlePlayingAtom } from "../store";
 import { ArticleType } from "../types";
-import { useLocation } from "wouter";
 
 const Article: FC<{ article: ArticleType }> = ({ article }) => {
-  const [articlePlaying, setArticlePlaying] = useAtom(articlePlayingAtom);
+  const setArticlePlaying = useSetAtom(articlePlayingAtom);
   const utils = trpc.useUtils();
-  const { mutate: generate, isLoading: isGenerating } =
+  const { mutate: generate, isPending: isGenerating } =
     trpc.article.audioGeneration.useMutation({
+      onSuccess: () => {
+        utils.article.list.invalidate();
+      },
+    });
+  const { mutate: deleteArticle, isPending: isDeleting } =
+    trpc.article.delete.useMutation({
       onSuccess: () => {
         utils.article.list.invalidate();
       },
@@ -70,6 +77,7 @@ const Article: FC<{ article: ArticleType }> = ({ article }) => {
             <Button
               onClick={() => generate({ articleUuid: article.uuid })}
               rightSection={<IconWand size="1rem" />}
+              loading={isGenerating}
             >
               Generate Audio
             </Button>
@@ -77,6 +85,16 @@ const Article: FC<{ article: ArticleType }> = ({ article }) => {
           <Button onClick={() => setLocation("/article/" + article.uuid)}>
             Read
           </Button>
+          <Space flex={1} />
+          <ActionIcon
+            size="input-sm"
+            variant="subtle"
+            color="error"
+            onClick={() => deleteArticle({ id: article.uuid })}
+            loading={isDeleting}
+          >
+            <IconTrash size="1rem" />
+          </ActionIcon>
         </Group>
       </CardSection>
     </Card>

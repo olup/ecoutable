@@ -6,8 +6,10 @@ import puppeteer from "puppeteer-core";
 import { Resource } from "sst";
 import TurndownService from "turndown";
 import { extractMetadata } from "./extractMetadata";
-import { askLlm } from "./llm";
+import { askLlm, describeImage } from "./llm";
 import { writeFileSync } from "fs";
+import { preprocessDom } from "./preprocessDom";
+import { cleanMarkdown } from "./markdown";
 
 const localChromePath =
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
@@ -28,22 +30,17 @@ export const getArticle = async (url: string) => {
   const articleHtml = await page.content();
   await browser.close();
 
-  // get og metadata
-
   // use readability to parse the article
   const doc: Document = new JSDOM(articleHtml).window.document;
-
-  const metadata = extractMetadata(doc);
-
-  const readability = new Readability(doc);
+  const cleanedDom = preprocessDom(doc);
+  const metadata = extractMetadata(cleanedDom);
+  const readability = new Readability(cleanedDom);
   const article = readability.parse();
   if (!article) {
     throw new Error("Could not parse article");
   }
 
-  writeFileSync("./article.html", articleHtml);
-
-  const markdownContent = turndown.turndown(article.content);
+  const markdownContent = cleanMarkdown(turndown.turndown(article.content));
 
   if (!article.lang) {
     const lang = await askLlm(
@@ -76,7 +73,19 @@ export const getAstNodeTextContent = async (node: any): Promise<string> => {
   return "";
 };
 
+const isNodeImage = (node: any) => {
+  if (node.children?.length > 1) return false;
+  if (node.children?.[0].type === "image") return node.children?.[0].url;
+  if (
+    node.children?.[0].type === "link" &&
+    node.children?.[0].children?.[0].type === "image"
+  )
+    return node.children?.[0].children?.[0].url;
+  return false;
+};
+
 export const processAstNode = async (
+  languageCode: string,
   node: any,
   parentBlockType: string | null
 ): Promise<{ type: string; content: string }[]> => {
@@ -84,6 +93,13 @@ export const processAstNode = async (
   const { type, children } = node as any;
 
   if (type === "paragraph") {
+    const imageSrc = await isNodeImage(node);
+    if (imageSrc) {
+      const imageDescription = await describeImage(imageSrc, languageCode);
+      blockArray.push({ type: "image", content: imageDescription || "" });
+      return blockArray;
+    }
+
     const textContent = await getAstNodeTextContent(node);
     blockArray.push({ type: "paragraph", content: textContent });
   }
@@ -96,7 +112,9 @@ export const processAstNode = async (
   if (children && Array.isArray(children)) {
     const blockType = `${parentBlockType}.${type}`;
     for (const child of children) {
-      blockArray.push(...(await processAstNode(child, blockType)));
+      blockArray.push(
+        ...(await processAstNode(languageCode, child, blockType))
+      );
     }
   }
 

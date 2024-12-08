@@ -17,7 +17,7 @@
     "@mozilla/readability": "^0.5.0",
     "@neondatabase/serverless": "^0.10.3",
     "@sparticuz/chromium": "^131.0.0",
-    "@trpc/server": "^10.45.2",
+    "@trpc/server": "^11.0.0-rc.648",
     "@types/fluent-ffmpeg": "^2.1.27",
     "aws-lambda": "^1.0.7",
     "drizzle-kit": "^0.28.1",

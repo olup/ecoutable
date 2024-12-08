@@ -20,7 +20,7 @@
     "@types/aws-lambda": "8.10.145"
   },
   "scripts": {
-    "dev": "sst dev --stage prod",
+    "dev": "sst dev --stage dev",
     "deploy:prod": "sst deploy --stage prod"
   }
 }

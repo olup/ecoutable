@@ -13,10 +13,12 @@ const voicesDictionary = {
   en: {
     paragraph: "en-GB-RyanNeural",
     heading: "en-GB-SoniaNeural",
+    image: "en-GB-SoniaNeural",
   },
   fr: {
     paragraph: "fr-FR-HenriNeural",
     heading: "fr-FR-DeniseNeural",
+    image: "fr-FR-DeniseNeural",
   },
 } as Record<string, Record<string, string>>;
 
@@ -44,7 +46,7 @@ export default async function generateAudioForArticle(articleUuid: string) {
   try {
     const markdownWithTitle = `# ${article.title}\n\n${article.markdownContent}`;
     const ast = await getMarkdownAst(markdownWithTitle);
-    const blocks = await processAstNode(ast, null);
+    const blocks = await processAstNode(article.lang, ast, null);
 
     const blobs: Blob[] = [];
 

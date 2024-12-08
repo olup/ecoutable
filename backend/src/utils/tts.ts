@@ -1,4 +1,4 @@
-import { escapeXml } from "./escapeXml";
+import { unescapeXml } from "./escapeXml";
 import WebSocket from "ws";
 
 export const CHROMIUM_FULL_VERSION = "130.0.2849.68";
@@ -150,7 +150,7 @@ class EdgeTTS {
           <prosody rate="${params?.rate || this.rate}" pitch="${
         params?.pitch || this.pitch
       }" volume="${params?.volume || this.volume}">
-            ${escapeXml(text)}
+            ${unescapeXml(text)}
           </prosody>
         </voice>
       </speak>
