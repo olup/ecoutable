@@ -1,12 +1,11 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { trpc } from "./lib/trpc";
-import { View } from "./View";
-import { MantineProvider } from "@mantine/core";
+import { HomeView } from "./views/HomeView";
 import { KindeProvider } from "@kinde-oss/kinde-auth-react";
 import { WithAuthView } from "./WithAuthView";
 import { WithTrpcClient } from "./WithTrpcClient";
 import { Route, useLocation } from "wouter";
-import { ArticleView } from "./components/ArticleView";
+import { ArticleView } from "./views/ArticleView";
 
 export function App() {
   return (
@@ -18,7 +17,7 @@ export function App() {
     >
       <WithTrpcClient>
         <WithAuthView>
-          <Route path="/" component={View} />
+          <Route path="/" component={HomeView} />
           <Route path="/article/:uuid" component={ArticleView} />
         </WithAuthView>
       </WithTrpcClient>

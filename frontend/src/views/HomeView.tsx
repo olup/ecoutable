@@ -1,3 +1,4 @@
+import { useKindeAuth } from "@kinde-oss/kinde-auth-react";
 import {
   Box,
   Button,
@@ -5,7 +6,6 @@ import {
   Container,
   CopyButton,
   Group,
-  Loader,
   Modal,
   Stack,
   Text,
@@ -14,19 +14,16 @@ import {
 } from "@mantine/core";
 import {
   IconCopy,
-  IconDeviceSpeaker,
-  IconEar,
   IconHandFinger,
   IconPlus,
   IconSpeakerphone,
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import Article from "./components/Article";
-import { trpc } from "./lib/trpc";
-import { useKindeAuth } from "@kinde-oss/kinde-auth-react";
-import { AudioPlayerOverlay } from "./components/AudioPlayerOverlay";
+import Article from "../components/Article";
+import { AudioPlayerOverlay } from "../components/AudioPlayerOverlay";
+import { trpc } from "../lib/trpc";
 
-export const View = () => {
+export const HomeView = () => {
   const { logout } = useKindeAuth();
 
   const [addUrl, setAddUrl] = useState("");
@@ -39,7 +36,7 @@ export const View = () => {
     refetch,
   } = trpc.article.list.useQuery();
 
-  const { mutate: add, isLoading: isAdding } = trpc.article.add.useMutation({
+  const { mutate: add, isPending: isAdding } = trpc.article.add.useMutation({
     onSuccess: () => {
       refetch();
     },

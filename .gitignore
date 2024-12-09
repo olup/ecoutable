@@ -26,3 +26,5 @@ npm-debug.log*
 ## Panda
 styled-system
 styled-system-studio
+
+.DS_Store

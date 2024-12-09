@@ -11,8 +11,10 @@ import { Resource } from "sst";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "@/utils/db";
+import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 const sqs = new SQSClient({});
+const s3 = new S3Client();
 
 const articleRouter = router({
   add: procedure
@@ -116,6 +118,26 @@ const articleRouter = router({
           code: "UNAUTHORIZED",
           message: "You must be logged in to add articles",
         });
+      }
+
+      const article = await ctx.db.query.articles.findFirst({
+        where: eq(articles.uuid, input.id),
+      });
+
+      if (!article) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Article not found",
+        });
+      }
+
+      if (article.textAudioUrl) {
+        await s3.send(
+          new DeleteObjectCommand({
+            Bucket: Resource.ecoutable.name,
+            Key: `audio/${article.uuid}/textContent.mp3`,
+          })
+        );
       }
 
       return ctx.db

@@ -1,11 +1,12 @@
-import { generateAudio } from "./tts";
-import { articles } from "../db/schema";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { eq } from "drizzle-orm";
+import { Resource } from "sst";
+import { articles } from "../db/schema";
 import { getDb } from "./db";
 import { processAstNode } from "./getArticle";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { Resource } from "sst";
 import { getMarkdownAst } from "./markdown";
+import { generateAudio } from "./tts";
+import appendSilenceToMp3WithRateLimit from "./appendSilence";
 
 const s3 = new S3Client();
 
@@ -56,7 +57,11 @@ export default async function generateAudioForArticle(articleUuid: string) {
         voice,
         lang: article.lang,
       });
-      blobs.push(blob);
+      const blobWithSilence = new Blob(
+        [await appendSilenceToMp3WithRateLimit(await blob.arrayBuffer())],
+        { type: "audio/mpeg" }
+      );
+      blobs.push(blobWithSilence);
     }
 
     const audio = new Blob(blobs, { type: "audio/mpeg" });

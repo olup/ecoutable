@@ -17,9 +17,7 @@ export default $config({
   async run() {
     const dbUrl = new sst.Secret("DbUrl");
 
-    const openAiApiKey = new sst.Secret(
-      "OpenAiApiKey"
-    );
+    const openAiApiKey = new sst.Secret("OpenAiApiKey");
 
     const bucket = new sst.aws.Bucket("ecoutable", {
       access: "public",
@@ -42,6 +40,7 @@ export default $config({
           keepNames: true,
         },
       },
+      layers: ["arn:aws:lambda:eu-central-1:241533134273:layer:ffmpeg:1"],
     });
 
     const api = new sst.aws.Function("myFunction", {
