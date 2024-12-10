@@ -6,7 +6,7 @@ import { ReactNode } from "react";
 import { IconArrowLeft } from "@tabler/icons-react";
 
 const P = ({ children }: { children?: ReactNode }) => (
-  <Text size="lg" c="dimmed" lh={1.5} mb={25}>
+  <Text size="lg" lh={1.5} mb={25}>
     {children}
   </Text>
 );
@@ -16,18 +16,32 @@ export function ArticleView() {
   const { data: article } = trpc.article.getOne.useQuery({ uuid: uuid! });
   const [, navigate] = useLocation();
 
-  console.log(article);
-
   return (
-    <Container my={10}>
+    <Container py={40}>
       <Button
         variant="outline"
-        leftSection={<IconArrowLeft size="1rem" />} onClick={() => navigate("/")}>Go Back</Button>
-      <Box  ff="Lora">
-      <h1>{article?.title}</h1>
-      <ReactMarkdown components={{ p: (props) => <P {...props} />, img: (props) => <img {...props} style={{maxHeight: "500px", margin: "0 auto"}} /> }}>
-        {article?.markdownContent}
-      </ReactMarkdown></Box>
+        leftSection={<IconArrowLeft size="1rem" />}
+        onClick={() => navigate("/")}
+        mb={40}
+      >
+        Go Back
+      </Button>
+      <Box p={40} bg="white">
+        <h1>{article?.title}</h1>
+        <ReactMarkdown
+          components={{
+            p: (props) => <P {...props} />,
+            img: (props) => (
+              <img
+                {...props}
+                style={{ maxHeight: "500px", margin: "0 auto" }}
+              />
+            ),
+          }}
+        >
+          {article?.markdownContent}
+        </ReactMarkdown>
+      </Box>
     </Container>
   );
 }

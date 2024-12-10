@@ -36,7 +36,7 @@ const Article: FC<{ article: ArticleType }> = ({ article }) => {
   const [, setLocation] = useLocation();
 
   return (
-    <Card key={article.uuid} shadow="sm" padding="lg" withBorder>
+    <Card key={article.uuid} shadow="sm" padding="lg" radius="md">
       <Stack>
         <Title order={3}>{article.title}</Title>
         <Text size="sm" c="dimmed">
@@ -82,14 +82,17 @@ const Article: FC<{ article: ArticleType }> = ({ article }) => {
               Generate Audio
             </Button>
           )}
-          <Button onClick={() => setLocation("/article/" + article.uuid)}>
+          <Button
+            variant="outline"
+            onClick={() => setLocation("/article/" + article.uuid)}
+          >
             Read
           </Button>
           <Space flex={1} />
           <ActionIcon
             size="input-sm"
             variant="subtle"
-            color="error"
+            color="red"
             onClick={() => deleteArticle({ id: article.uuid })}
             loading={isDeleting}
           >

@@ -5,6 +5,8 @@ import {
   IconPlayerSkipBack,
   IconPlayerSkipForward,
   IconPlayerStop,
+  IconRewindBackward15,
+  IconRewindForward15,
 } from "@tabler/icons-react";
 import { useState, useRef, FC, useEffect } from "react";
 
@@ -97,10 +99,10 @@ const AudioPlayer: FC<{ src: string; autoplay: Boolean }> = ({
         </ActionIcon>
         <Space w={10} />
         <ActionIcon onClick={rewindBackward}>
-          <IconPlayerSkipBack size="1rem" />
+          <IconRewindBackward15 size="1rem" />
         </ActionIcon>
         <ActionIcon onClick={skipForward}>
-          <IconPlayerSkipForward size="1rem" />
+          <IconRewindForward15 size="1rem" />
         </ActionIcon>
         <Space w={10} />
         <Progress value={progress} flex={1} radius={8} h={8} />
