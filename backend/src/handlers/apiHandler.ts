@@ -55,6 +55,7 @@ app.get("/rss/:userUuid", async (c) => {
           <itunes:image href="https://api.dicebear.com/9.x/glass/png?seed=${userUuid}" />
           <itunes:category text="Technology" />
           <description>A podcast feed generated from articles</description>
+          <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
           ${rssItems}
         </channel>
       </rss>

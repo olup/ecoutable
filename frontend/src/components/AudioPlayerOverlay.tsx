@@ -15,10 +15,11 @@ export const AudioPlayerOverlay = () => {
       style={{
         position: "fixed",
         zIndex: 100,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        borderTop: "1px solid #ccc",
+        bottom: 10,
+        borderRadius: 10,
+        left: "50%",
+        padding: 10,
+        transform: "translateX(-50%)",
       }}
       bg="white"
       display="flex"

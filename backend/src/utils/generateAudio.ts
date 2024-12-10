@@ -7,6 +7,10 @@ import { processAstNode } from "./getArticle";
 import { getMarkdownAst } from "./markdown";
 import { generateAudio } from "./tts";
 import appendSilenceToMp3WithRateLimit from "./appendSilence";
+import path, { join } from "path";
+import { mkdir, readFile, rm, unlink, writeFile } from "fs/promises";
+import { tmpdir } from "os";
+import { combineMp3Files } from "./combineMp3Files";
 
 const s3 = new S3Client();
 
@@ -44,33 +48,42 @@ export default async function generateAudioForArticle(articleUuid: string) {
     throw new Error("Article not found");
   }
 
+  const sourceList: string[] = [];
+
+  // preparing our work directory
+  const tempDirUuid = crypto.randomUUID();
+  const tempDir = path.join(tmpdir(), tempDirUuid);
+  const tempDirParts = path.join(tempDir, "parts");
+  await mkdir(tempDirParts, { recursive: true });
+
   try {
+    // preparing final markdown
     const markdownWithTitle = `# ${article.title}\n\n${article.markdownContent}`;
     const ast = await getMarkdownAst(markdownWithTitle);
     const blocks = await processAstNode(article.lang, ast, null);
 
-    const blobs: Blob[] = [];
-
     for (const block of blocks) {
+      const blockId = crypto.randomUUID();
+
       const voice = getVoiceId(article.lang, block.type);
       const blob = await generateAudio(block.content, {
         voice,
         lang: article.lang,
       });
-      const blobWithSilence = new Blob(
-        [await appendSilenceToMp3WithRateLimit(await blob.arrayBuffer())],
-        { type: "audio/mpeg" }
-      );
-      blobs.push(blobWithSilence);
+      const audioPath = join(tempDir, "parts", `${blockId}.mp3`);
+      await writeFile(audioPath, blob.stream());
+      sourceList.push(audioPath);
     }
 
-    const audio = new Blob(blobs, { type: "audio/mpeg" });
-    const audioPath = `audio/${article.uuid}/textContent.mp3`;
+    const outputPath = join(tempDir, "output.mp3");
+    await combineMp3Files(sourceList, outputPath);
+
+    const audioBucketPath = `audio/${article.uuid}/audio-full.mp3`;
     await s3.send(
       new PutObjectCommand({
         Bucket: Resource.ecoutable.name,
-        Key: `audio/${article.uuid}/textContent.mp3`,
-        Body: Buffer.from(await audio.arrayBuffer()),
+        Key: audioBucketPath,
+        Body: await readFile(outputPath),
         ContentType: "audio/mpeg",
       })
     );
@@ -78,7 +91,7 @@ export default async function generateAudioForArticle(articleUuid: string) {
     await db
       .update(articles)
       .set({
-        textAudioUrl: `https://${Resource.ecoutable.name}.s3.eu-central-1.amazonaws.com/${audioPath}`,
+        textAudioUrl: `https://${Resource.ecoutable.name}.s3.eu-central-1.amazonaws.com/${audioBucketPath}`,
         status: "complete",
       })
       .where(eq(articles.uuid, article.uuid));
@@ -90,5 +103,7 @@ export default async function generateAudioForArticle(articleUuid: string) {
       .set({ status: "error" })
       .where(eq(articles.uuid, article.uuid));
     throw error;
+  } finally {
+    await rm(tempDir, { recursive: true });
   }
 }

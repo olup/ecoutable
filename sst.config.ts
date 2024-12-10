@@ -41,6 +41,9 @@ export default $config({
         },
       },
       layers: ["arn:aws:lambda:eu-central-1:241533134273:layer:ffmpeg:1"],
+      environment: {
+        isDev: $dev ? "true" : "false",
+      },
     });
 
     const api = new sst.aws.Function("myFunction", {

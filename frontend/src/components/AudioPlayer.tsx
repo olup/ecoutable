@@ -8,12 +8,15 @@ import {
   IconRewindBackward15,
   IconRewindForward15,
 } from "@tabler/icons-react";
+import { useSetAtom } from "jotai";
 import { useState, useRef, FC, useEffect } from "react";
+import { articlePlayingAtom } from "../store";
 
 const AudioPlayer: FC<{ src: string; autoplay: Boolean }> = ({
   src,
   autoplay,
 }) => {
+  const setReadArticle = useSetAtom(articlePlayingAtom);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -34,6 +37,7 @@ const AudioPlayer: FC<{ src: string; autoplay: Boolean }> = ({
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
       setIsPlaying(false);
+      setReadArticle(null);
     }
   };
 
@@ -97,11 +101,10 @@ const AudioPlayer: FC<{ src: string; autoplay: Boolean }> = ({
         <ActionIcon onClick={handleStop}>
           <IconPlayerStop size="1rem" />
         </ActionIcon>
-        <Space w={10} />
-        <ActionIcon onClick={rewindBackward}>
+        <ActionIcon variant="light" onClick={rewindBackward}>
           <IconRewindBackward15 size="1rem" />
         </ActionIcon>
-        <ActionIcon onClick={skipForward}>
+        <ActionIcon variant="light" onClick={skipForward}>
           <IconRewindForward15 size="1rem" />
         </ActionIcon>
         <Space w={10} />
