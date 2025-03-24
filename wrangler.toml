@@ -1,19 +1,17 @@
 name = "article-processor"
-compatibility_date = "2024-01-01"
-
-[site]
-bucket = "./dist"
+compatibility_date = "2024-03-04"
 
 [build]
 command = "npm run build:client"
 
 [[r2_buckets]]
-binding = "ECOUTABLE_BUCKET"
-bucket_name = "ecoutable-bucket"
+binding = "BUCKET"
+bucket_name = "ecoutable"
 
-[[kv_namespaces]]
-binding = "ECOUTABLE_KV"
-id = "ec5a0d0b-c0c7-4f6f-a2c5-f9f8c4b6b9b3"
+[[d1_databases]]
+binding = "DB"
+database_name = "ecoutable"
+database_id = "785b7464-f198-428b-8f50-7bff5b3c1ccf"
+migrations_dir = "migrations"
 
 [vars]
-DATABASE_URL = ""

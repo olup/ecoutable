@@ -1,13 +1,15 @@
 import { initTRPC } from "@trpc/server";
 import { eq } from "drizzle-orm";
-import { createArticle } from "../services/article";
-import { Context } from "./trpc";
+import { createArticle } from "../_services/article";
+import { Context } from "./[trpc]";
+import * as schema from "../_db/schema";
 
 const t = initTRPC.context<Context>().create();
 
 export const router = t.router({
   listArticles: t.procedure.query(async ({ ctx }) => {
-    return await ctx.kv.list({ prefix: "articles/" });
+    const articles = await ctx.db.select().from(schema.article);
+    return { articles };
   }),
 
   deleteArticle: t.procedure
@@ -16,7 +18,7 @@ export const router = t.router({
       return val;
     })
     .mutation(async ({ ctx, input }) => {
-      await ctx.kv.delete(`articles/${input}`);
+      await ctx.db.delete(schema.article).where(eq(schema.article.uuid, input));
       return { success: true };
     }),
 
@@ -26,8 +28,13 @@ export const router = t.router({
       return val;
     })
     .mutation(async (opts) => {
-      const article = await createArticle(opts.input, opts.ctx);
-      return { success: true, articleUuid: article.uuid };
+      try {
+        const article = await createArticle(opts.input, opts.ctx);
+        return { success: true, articleUuid: article.uuid };
+      } catch (error) {
+        console.error("Failed to add article:", error);
+        return { success: false, error };
+      }
     }),
 });
 

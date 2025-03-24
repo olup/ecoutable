@@ -12,6 +12,12 @@
     - Compatibility flags
     - Environment variables
     - R2 bucket bindings
-    - KV namespace bindings
+
+## Architecture Decisions
+- Database Strategy:
+  - Use D1 with Drizzle ORM for structured data and configuration
+  - Avoid environment variables for configuration, store in database
+  - Use R2 for binary/blob storage
+  - Schema-driven approach with Drizzle for type safety
 
 [REST OF FILE UNCHANGED]

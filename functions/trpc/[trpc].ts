@@ -1,29 +1,29 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
-import { router } from ".";
-import {
-  KVNamespace,
-  PagesFunction,
-  R2Bucket,
-} from "@cloudflare/workers-types";
+import { router } from "./router";
+import { D1Database, PagesFunction, R2Bucket } from "@cloudflare/workers-types";
+import { createDb } from "../_db";
 
-type Env = {
-  ECOUTABLE_KV: KVNamespace;
+export type Env = {
+  DB: D1Database;
   BUCKET: R2Bucket;
 };
 
 export type Context = {
-  kv: KVNamespace;
+  db: ReturnType<typeof createDb>;
   bucket: R2Bucket;
 };
 
+// @ts-ignore
 export const onRequest: PagesFunction<Env> = async (context) => {
   return fetchRequestHandler({
-    endpoint: "/api/trpc",
+    endpoint: "/trpc",
+    // @ts-ignore
     req: context.request,
     router,
     createContext: () => ({
-      kv: context.env.ECOUTABLE_KV,
+      db: createDb(context.env.DB),
       bucket: context.env.BUCKET,
+      context,
     }),
   });
 };

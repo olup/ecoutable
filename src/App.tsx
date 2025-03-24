@@ -1,82 +1,80 @@
-import React, { useEffect, useState } from 'react'
-import { trpc } from './lib/trpc'
-import { Container, Title, Card, Stack, Text, Button } from '@mantine/core'
-import { Route, Switch, useLocation } from 'wouter'
+import React, { useEffect, useState } from "react";
+import { trpc } from "./lib/trpc";
+import {
+  Container,
+  Title,
+  Card,
+  Stack,
+  Text,
+  Button,
+  Group,
+  Badge,
+} from "@mantine/core";
+import { inferProcedureOutput } from "@trpc/server";
+import { AppRouter } from "../functions/trpc/router";
 
-function ArticleList() {
-  const [articles, setArticles] = useState<any[]>([])
-
-  useEffect(() => {
-    trpc.listArticles.query().then(setArticles)
-  }, [])
-
-  return (
-    <Stack>
-      {articles.map(article => (
-        <Card key={article.id} shadow="sm" padding="lg">
-          <Title order={3}>{article.url}</Title>
-          <Text size="sm" c={article.status === 'error' ? 'red' : 'dimmed'}>
-            Status: {article.status}
-          </Text>
-          {article.summary && (
-            <Text mt="sm" size="sm" c="dimmed">
-              {article.summary}
-            </Text>
-          )}
-          {article.audioPath && (
-            <audio controls src={article.audioPath} />
-          )}
-        </Card>
-      ))}
-    </Stack>
-  )
-}
-
-function ShareRoute() {
-  const [, setLocation] = useLocation()
-  const [url, setUrl] = useState(() => {
-    const params = new URLSearchParams(window.location.search)
-    return params.get('url') || ''
-  })
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const urlParam = params.get('url')
-    if (urlParam) {
-      trpc.addArticle.mutate(urlParam)
-        .then(() => setLocation('/'))
-    }
-  }, [setLocation])
-
-  const handlePaste = async () => {
-    try {
-      const text = await navigator.clipboard.readText()
-      setUrl(text)
-      trpc.addArticle.mutate(text)
-        .then(() => setLocation('/'))
-    } catch (err) {
-      console.error('Failed to read clipboard:', err)
-    }
-  }
-
-  return (
-    <Stack align="center" gap="md">
-      <Text>Paste a URL to process it</Text>
-      <Button onClick={handlePaste}>Paste URL</Button>
-    </Stack>
-  )
-}
+type Article = inferProcedureOutput<
+  AppRouter["_def"]["procedures"]["listArticles"]
+>["articles"][number];
 
 function App() {
+  const [articles, setArticles] = useState<Article[]>([]);
+
+  useEffect(() => {
+    // Add paste event listener
+    const handlePaste = async (e: ClipboardEvent) => {
+      const text = e.clipboardData?.getData("text");
+      if (text?.startsWith("https://")) {
+        try {
+          await trpc.addArticle.mutate(text);
+          // Refresh articles list
+          const response = await trpc.listArticles.query();
+          setArticles(response.articles);
+        } catch (error) {
+          console.error("Failed to add article:", error);
+        }
+      }
+    };
+
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
+  }, []);
+
+  useEffect(() => {
+    trpc.listArticles.query().then((response) => {
+      setArticles(response.articles);
+    });
+  }, []);
+
   return (
     <Container>
-      <Title order={1}>Articles</Title>
-      <Switch>
-        <Route path="/share" component={ShareRoute} />
-        <Route path="/" component={ArticleList} />
-      </Switch>
+      <Stack>
+        <Title order={2}>Articles</Title>
+        <Group>
+          <Button>Add bookmark to browser</Button>
+        </Group>
+        {articles.map((article) => (
+          <Card key={article.uuid} shadow="sm" padding="lg" withBorder>
+            <Title order={3}>{article.title}</Title>
+            <Text size="sm" c="dimmed">
+              {article.url}
+            </Text>
+            <Badge size="sm" radius="sm">
+              {article.status}
+            </Badge>
+            {article.summary && (
+              <Text mt="sm" size="sm" c="dimmed">
+                {article.summary}
+              </Text>
+            )}
+            {article.fullLengthAudioUrl && (
+              <audio src={"/files/" + article.fullLengthAudioUrl} controls />
+            )}
+          </Card>
+        ))}
+      </Stack>
     </Container>
-  )
+  );
 }
 
-export default App
+export default App;
