@@ -1,0 +1,14 @@
+{
+  "kv_namespaces": [
+    {
+      "binding": "ecoutable_users",
+      "id": "06e95c1fd70b41108c58511f9d74ee3b"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "AUDIO_BUCKET",
+      "bucket_name": "ecoutable"
+    }
+  ]
+}
