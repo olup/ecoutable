@@ -23,6 +23,7 @@ function App() {
     onSettled: () => refetch(),
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { mutateAsync: addArticle, isPending } = useMutation({
     ...useOrpc.addArticle.mutationOptions(),
     onSettled: () => {

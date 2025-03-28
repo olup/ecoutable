@@ -1,11 +1,8 @@
-export interface Env {
-  GEMINI_API_KEY: string;
-  REPLICATE_API_KEY: string;
-  AUDIO_BUCKET: R2Bucket;
-  ecoutable_users: KVNamespace;
-}
-
-export type ArticleStatus = "ADDED" | "GENERATING_AUDIO" | "AUDIO_GENERATED";
+export type ArticleStatus =
+  | "ADDED"
+  | "PROCESSING"
+  | "AUDIO_GENERATED"
+  | "ERROR";
 
 export interface Article {
   id: string;

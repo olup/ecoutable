@@ -1,0 +1,38 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# build
+dist
+build
+
+# environment
+.env
+.env.local
+.env.*
+!.env.example
+
+# logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# testing
+coverage
+.nyc_output
+
+# misc
+.DS_Store
+*.pem
+Thumbs.db

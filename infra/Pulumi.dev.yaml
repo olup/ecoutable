@@ -1,0 +1,6 @@
+config:
+  gcp:project: ecoutable
+  ecoutable-gcp:geminiApiKey:
+    secure: AAABAEiKcfc0YqLPV9ej9ulJvzMPen1yNKxBZHXjIJHGJDcT1AO6MxVUQPMgjy9RBoZnDJju+tD0VTAErxYF5fon0bFmE1g=
+  ecoutable-gcp:replicateApiKey:
+    secure: AAABAK+Kdvh8LX0S86PWhm5Z7VVBctoO27V9wjzbUxV4WFqdISuLHsWM1K70o8lH9WMN7Tn+cpsHmJ1YA2xsbsY82gFyAk3z

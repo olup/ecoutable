@@ -1,0 +1,11 @@
+.git
+.gitignore
+node_modules
+packages/frontend
+infra
+*.md
+*.log
+.env*
+.vscode
+dist
+*.test.*
