@@ -1,40 +1,99 @@
 import { Readable } from "node:stream";
-import Replicate from "replicate";
 
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_KEY,
-});
+const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
+const REPLICATE_API_URL = "https://api.replicate.com/v1/predictions";
 
-const streamToBuffer = (stream: Readable): Promise<Buffer> => {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
+async function streamToBuffer(
+  stream: ReadableStream<Uint8Array>
+): Promise<Buffer> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
 
-    stream.on("data", (chunk) =>
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
-    );
-    stream.on("end", () => resolve(Buffer.concat(chunks)));
-    stream.on("error", (err) => reject(err));
-  });
-};
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) chunks.push(value);
+  }
 
-export const runTts = async (text: string): Promise<Buffer> => {
+  // Combine all chunks into one Buffer
+  return Buffer.concat(chunks);
+}
+
+export const runTts = async (text: string) => {
+  if (!REPLICATE_API_TOKEN) {
+    throw new Error("REPLICATE_API_TOKEN is not set");
+  }
+
   try {
-    console.log("Generating TTS");
+    console.log("Initiating TTS generation");
 
-    const input = {
-      text: text,
-      voice: "af_alloy",
-    };
+    // Start prediction
+    const response = await fetch(REPLICATE_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Token ${REPLICATE_API_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        version:
+          "f559560eb822dc509045f3921a1921234918b91739db4bf3daab2169b71c7a13",
+        input: {
+          text: text,
+          voice: "af_alloy",
+        },
+      }),
+    });
 
-    const output = (await replicate.run(
-      "jaaari/kokoro-82m:f559560eb822dc509045f3921a1921234918b91739db4bf3daab2169b71c7a13",
-      { input }
-    )) as Readable;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Failed to start prediction: ${JSON.stringify(error)}`);
+    }
 
-    // In Node.js, we'll get the audio data as a Buffer
-    return streamToBuffer(output);
+    const prediction = await response.json();
+
+    // Poll for completion
+    while (true) {
+      const statusResponse = await fetch(
+        `${REPLICATE_API_URL}/${prediction.id}`,
+        {
+          headers: {
+            Authorization: `Token ${REPLICATE_API_TOKEN}`,
+          },
+        }
+      );
+
+      if (!statusResponse.ok) {
+        throw new Error("Failed to check prediction status");
+      }
+
+      const status = await statusResponse.json();
+
+      if (status.status === "succeeded") {
+        console.log("TTS generated successfully");
+
+        // Fetch the audio file as stream
+        const audioResponse = await fetch(status.output);
+        if (!audioResponse.ok) {
+          throw new Error("Failed to fetch audio file");
+        }
+
+        // Convert response stream to buffer
+        return await streamToBuffer(
+          audioResponse.body as ReadableStream<Uint8Array>
+        );
+      }
+
+      if (status.status === "failed") {
+        throw new Error(`Prediction failed: ${status.error}`);
+      }
+
+      // Wait before polling again
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
   } catch (error) {
-    console.error("Failed to generate TTS", error);
-    throw new Error("Failed to generate TTS");
+    console.error("Failed to generate TTS:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to generate TTS"
+    );
   }
 };

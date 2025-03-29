@@ -1,5 +1,7 @@
-import { ActionIcon, Group } from "@mantine/core";
+import { ActionIcon, Group, Loader } from "@mantine/core";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useOrpc } from "../orpc";
 import {
   PauseIcon,
   PlayIcon,
@@ -18,9 +20,13 @@ export function AudioPlayer({ id }: AudioPlayerProps) {
   const [duration, setDuration] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const { data: audioData, mutate: loadAudio } = useMutation({
+    ...useOrpc.getAudio.mutationOptions(),
+  });
+
   const initAudio = useCallback(() => {
-    if (!audioRef.current) {
-      const audio = new Audio(`/audio/${id}`);
+    if (!audioRef.current && audioData?.url) {
+      const audio = new Audio(audioData.url);
       audio.addEventListener("ended", () => {
         setIsPlaying(false);
       });
@@ -30,21 +36,24 @@ export function AudioPlayer({ id }: AudioPlayerProps) {
       audioRef.current = audio;
     }
     return audioRef.current;
-  }, [id]);
+  }, [audioData?.url]);
 
   useEffect(() => {
-    // Initialize audio on mount to load metadata
-    initAudio();
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
     };
-  }, [initAudio]);
+  }, []);
 
   const play = useCallback(async () => {
+    if (!audioData?.url) {
+      await loadAudio({ articleId: id });
+    }
     const audio = initAudio();
+    if (!audio) return;
+
     try {
       await audio.play();
       setIsPlaying(true);
@@ -105,15 +114,25 @@ export function AudioPlayer({ id }: AudioPlayerProps) {
         <RotateCwIcon size="1rem" />
       </ActionIcon>
 
-      <ActionIcon
-        size="input-xs"
-        variant="outline"
-        component="a"
-        href={`/audio/${id}`}
-        download
-      >
-        <DownloadIcon size="1rem" />
-      </ActionIcon>
+      {audioData?.url ? (
+        <ActionIcon
+          size="input-xs"
+          variant="outline"
+          component="a"
+          href={audioData.url}
+          download
+          onClick={async (e) => {
+            if (!audioData.url) {
+              e.preventDefault();
+              await loadAudio({ articleId: id });
+            }
+          }}
+        >
+          <DownloadIcon size="1rem" />
+        </ActionIcon>
+      ) : (
+        <Loader size="xs" />
+      )}
     </Group>
   );
 }

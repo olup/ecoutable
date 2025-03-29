@@ -10,6 +10,7 @@ import { splitMarkdownIntoChunks } from "./utils/article.js";
 import { runTts } from "./utils/tts.js";
 import { getUserData, saveUserData } from "./utils/user-data.js";
 import { Article, CURRENT_USER_ID, UserData } from "./models/types.js";
+import { generateSignedUrl } from "./utils/storage.js";
 dotenv.config();
 
 // Initialize Google Cloud Storage
@@ -118,13 +119,13 @@ CLEANED ARTICLE CONTENT
 
       // Generate audio
       const ttsContent = augmentedSplits.join("\n\n");
-      const wavArray = await runTts(ttsContent);
+      const wavBuffer = await runTts(ttsContent);
 
       // Upload to Google Cloud Storage
       console.log("Uploading audio to bucket");
       try {
-        const file = bucket.file(`${tinyUid}.wav`);
-        await file.save(wavArray);
+        const file = bucket.file(`audio/${tinyUid}.wav`);
+        await file.save(wavBuffer);
 
         // Update status to AUDIO_GENERATED
         article.status = "AUDIO_GENERATED";
@@ -183,6 +184,26 @@ CLEANED ARTICLE CONTENT
       } catch (error) {
         console.error("Error deleting article:", error);
         return false;
+      }
+    }),
+
+  getAudio: os
+    .input(z.object({ articleId: z.string() }))
+    .handler(async ({ input }) => {
+      try {
+        const path = `audio/${input.articleId}.wav`;
+        const file = bucket.file(path);
+        const exists = await file.exists();
+        if (!exists[0]) {
+          return null;
+        }
+
+        const url = await generateSignedUrl(file);
+
+        return { url };
+      } catch (error) {
+        console.error("Error getting audio:", error);
+        return null;
       }
     }),
 };

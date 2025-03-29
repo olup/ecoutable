@@ -17,6 +17,6 @@
       "*": ["*", "*.ts", "*.js"] // ✅ Resolves imports without extensions
     }
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "tts-demo.ts"],
   "exclude": ["node_modules", "dist"]
 }

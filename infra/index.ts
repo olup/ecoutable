@@ -6,7 +6,8 @@ import * as docker from "@pulumi/docker";
 const config = new pulumi.Config();
 const serviceName = "ecoutable";
 const region = "us-central1";
-const project = gcp.config.project;
+const gcpConfig = new pulumi.Config("gcp");
+const project = gcpConfig.require("project");
 
 // Environment variables from config
 const geminiApiKey = config.requireSecret("geminiApiKey");
@@ -18,6 +19,7 @@ const services = [
   "artifactregistry.googleapis.com",
   "cloudbuild.googleapis.com",
   "storage.googleapis.com",
+  "iam.googleapis.com",
 ];
 
 services.forEach((service) => {
@@ -35,7 +37,9 @@ const repo = new gcp.artifactregistry.Repository("my-repo", {
 });
 
 // ✅ Define the Docker image path
-const imageName = `${region}-docker.pkg.dev/${project}/${serviceName}/${serviceName}:latest`;
+const registryHost = `${region}-docker.pkg.dev`;
+const imageTag = new Date().getTime().toString();
+const imageName = `${registryHost}/${project}/${serviceName}/${serviceName}:${imageTag}`;
 
 // Build Docker image after repo is created
 const dockerImage = new docker.Image(
@@ -45,6 +49,11 @@ const dockerImage = new docker.Image(
     build: {
       context: "../",
       dockerfile: "../Dockerfile",
+    },
+    registry: {
+      server: registryHost,
+      username: "oauth2accesstoken",
+      password: gcp.config.accessToken,
     },
   },
   {
@@ -58,6 +67,12 @@ const bucket = new gcp.storage.Bucket(`${serviceName}-bucket`, {
   uniformBucketLevelAccess: true,
 });
 
+// ✅ Create service account for Cloud Run
+const computeServiceAccount = new gcp.serviceaccount.Account("cloud-run-sa", {
+  accountId: `${serviceName}-sa`,
+  displayName: "Service Account for Cloud Run",
+});
+
 // ✅ Deploy to Cloud Run (after Docker image is built)
 const service = new gcp.cloudrun.Service(
   serviceName,
@@ -65,9 +80,10 @@ const service = new gcp.cloudrun.Service(
     location: region,
     template: {
       spec: {
+        serviceAccountName: computeServiceAccount.email,
         containers: [
           {
-            image: pulumi.interpolate`${imageName}`,
+            image: imageName,
             ports: [{ containerPort: 3333 }],
             envs: [
               {
@@ -75,16 +91,12 @@ const service = new gcp.cloudrun.Service(
                 value: geminiApiKey,
               },
               {
-                name: "REPLICATE_API_KEY",
+                name: "REPLICATE_API_TOKEN",
                 value: replicateApiKey,
               },
               {
                 name: "BUCKET_NAME",
                 value: pulumi.interpolate`${bucket.name}`,
-              },
-              {
-                name: "FOO",
-                value: "bar",
               },
             ],
           },
@@ -103,6 +115,52 @@ new gcp.cloudrun.IamMember(`${serviceName}-invoker`, {
   location: service.location,
   role: "roles/run.invoker",
   member: "allUsers",
+});
+
+// Grant necessary IAM roles to the service account
+const requiredRoles = {
+  // Project-level roles
+  project: [
+    "roles/iam.serviceAccountTokenCreator", // For signing URLs
+    "roles/iam.serviceAccountKeyAdmin", // For managing keys and signing blobs
+    "roles/iam.serviceAccountUser", // For impersonating the service account
+  ],
+  // Bucket-level roles
+  bucket: [
+    "roles/storage.admin", // Full access to storage objects
+  ],
+  // Service account-level roles
+  serviceAccount: [
+    "roles/iam.serviceAccountKeyAdmin", // Self-management of keys
+    "roles/iam.serviceAccountUser", // Self-impersonation
+  ],
+};
+
+// Apply project-level roles
+requiredRoles.project.forEach((role) => {
+  new gcp.projects.IAMMember(`project-${role}`, {
+    project: project,
+    role: role,
+    member: pulumi.interpolate`serviceAccount:${computeServiceAccount.email}`,
+  });
+});
+
+// Apply bucket-level roles
+requiredRoles.bucket.forEach((role) => {
+  new gcp.storage.BucketIAMMember(`bucket-${role}`, {
+    bucket: bucket.name,
+    role: role,
+    member: pulumi.interpolate`serviceAccount:${computeServiceAccount.email}`,
+  });
+});
+
+// Apply service account-level roles
+requiredRoles.serviceAccount.forEach((role) => {
+  new gcp.serviceaccount.IAMMember(`sa-${role}`, {
+    serviceAccountId: computeServiceAccount.name,
+    role: role,
+    member: pulumi.interpolate`serviceAccount:${computeServiceAccount.email}`,
+  });
 });
 
 // ✅ Output the URL of the deployed service and bucket name
