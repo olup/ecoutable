@@ -22,6 +22,9 @@ RUN pnpm run build
 # Production stage
 FROM node:20-alpine
 
+# Install ffmpeg from Alpine package repository
+RUN apk add --no-cache ffmpeg
+
 WORKDIR /app
 
 # Copy only the necessary files from the builder

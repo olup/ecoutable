@@ -1,4 +1,4 @@
-interface MarkdownChunk {
+export interface MarkdownChunk {
   type: "text" | "image";
   content: string;
 }

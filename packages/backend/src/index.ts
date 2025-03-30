@@ -1,16 +1,16 @@
-import dotenv from "dotenv";
-import { os } from "@orpc/server";
-import { z } from "zod";
-import { createServer } from "node:http";
 import { Storage } from "@google-cloud/storage";
+import { os } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/node";
 import { CORSPlugin } from "@orpc/server/plugins";
-import { generateCompletion, describeImage } from "./utils/llm.js";
-import { splitMarkdownIntoChunks } from "./utils/article.js";
-import { runTts } from "./utils/tts.js";
-import { getUserData, saveUserData } from "./utils/user-data.js";
-import { Article, CURRENT_USER_ID, UserData } from "./models/types.js";
+import dotenv from "dotenv";
+import { createServer } from "node:http";
+import { z } from "zod";
+import { Article, CURRENT_USER_ID } from "./models/types.js";
+import { MarkdownChunk, splitMarkdownIntoChunks } from "./utils/article.js";
+import { describeImage, generateCompletion } from "./utils/llm.js";
 import { generateSignedUrl } from "./utils/storage.js";
+import { processContentToAudio } from "./utils/tts.js";
+import { getUserData, saveUserData } from "./utils/user-data.js";
 dotenv.config();
 
 // Initialize Google Cloud Storage
@@ -108,18 +108,47 @@ CLEANED ARTICLE CONTENT
       // Split markdown and process images
       const splitted = splitMarkdownIntoChunks(cleanedArticle);
       console.log("Augmenting splits");
-      const augmentedSplits = await Promise.all(
+      // Process chunks and augment image descriptions
+      // Process chunks and augment image descriptions
+      const processedChunks = await Promise.all(
         splitted.map(async (chunk) => {
           if (chunk.type === "image") {
-            return await describeImage(chunk.content);
+            const description = await describeImage(chunk.content);
+            // Skip image if description is null
+            if (!description) {
+              return null;
+            }
+            return {
+              type: "image" as const,
+              content: description,
+            };
           }
-          return chunk.content;
+          return chunk;
         })
       );
 
-      // Generate audio
-      const ttsContent = augmentedSplits.join("\n\n");
-      const wavBuffer = await runTts(ttsContent);
+      // Filter out null chunks and generate audio
+      // Convert the chunks to the format expected by processContentToAudio
+      // First filter out nulls and convert to ContentChunks
+      const validChunks = processedChunks
+        .filter((chunk): chunk is MarkdownChunk => chunk !== null)
+        .map((chunk) => {
+          // Check if this is a header/title by looking for markdown header syntax
+          const isHeader =
+            chunk.type === "text" && /^#{1,6}\s/.test(chunk.content);
+          if (isHeader) {
+            return {
+              type: "title" as const,
+              content: chunk.content.replace(/^#{1,6}\s/, ""), // Remove header markdown
+            };
+          }
+          return {
+            type:
+              chunk.type === "text" ? ("text" as const) : ("image" as const),
+            content: chunk.content,
+          };
+        });
+      const wavBuffer = await processContentToAudio(validChunks);
 
       // Upload to Google Cloud Storage
       console.log("Uploading audio to bucket");
