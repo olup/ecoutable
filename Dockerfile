@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:22-slim AS builder
 
 WORKDIR /app
 
@@ -20,10 +20,13 @@ WORKDIR /app/packages/backend
 RUN pnpm run build
 
 # Production stage
-FROM node:20-alpine
+FROM node:22-slim
 
 # Install ffmpeg from Alpine package repository
-RUN apk add --no-cache ffmpeg
+RUN apt-get update && \
+    apt-get install -y ffmpeg && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

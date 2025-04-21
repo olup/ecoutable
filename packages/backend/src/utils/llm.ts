@@ -18,7 +18,7 @@ export const generateCompletion = async (prompt: string) => {
       ],
     });
 
-    return response.choices[0].message.content;
+    return response.choices[0]?.message.content;
   } catch (error) {
     console.error("Failed to generate completion", error);
     return null;
@@ -64,7 +64,7 @@ export const describeImage = async (imageUrl: string) => {
       ],
     });
 
-    return response.choices[0].message.content;
+    return response.choices[0]?.message.content;
   } catch (error) {
     console.error("Failed to describe image", imageUrl, error);
     return `Note from the reader: An image was inserted here, but I couldn't describe it.`;

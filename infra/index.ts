@@ -131,6 +131,7 @@ const requiredRoles = {
   ],
   // Service account-level roles
   serviceAccount: [
+    "roles/iam.serviceAccountTokenCreator", // Self-token creation (includes signing)
     "roles/iam.serviceAccountKeyAdmin", // Self-management of keys
     "roles/iam.serviceAccountUser", // Self-impersonation
   ],

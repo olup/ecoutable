@@ -1,8 +1,8 @@
 import { Storage } from "@google-cloud/storage";
+import "dotenv/config";
 import { os } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/node";
 import { CORSPlugin } from "@orpc/server/plugins";
-import dotenv from "dotenv";
 import { createServer } from "node:http";
 import { z } from "zod";
 import { Article, CURRENT_USER_ID } from "./models/types.js";
@@ -11,7 +11,6 @@ import { describeImage, generateCompletion } from "./utils/llm.js";
 import { generateSignedUrl } from "./utils/storage.js";
 import { processContentToAudio } from "./utils/tts.js";
 import { getUserData, saveUserData } from "./utils/user-data.js";
-dotenv.config();
 
 // Initialize Google Cloud Storage
 const storage = new Storage();
@@ -87,9 +86,9 @@ Keep the rest of the content as is. Do not add anything to the content.
 CLEANED ARTICLE CONTENT
 `;
 
-      let cleanedArticle: string | null = null;
+      let cleanedArticle: string;
       try {
-        cleanedArticle = await generateCompletion(prompt);
+        cleanedArticle = (await generateCompletion(prompt)) || "";
         if (!cleanedArticle) {
           throw new Error("Failed to generate completion");
         }
@@ -107,17 +106,19 @@ CLEANED ARTICLE CONTENT
 
       // Split markdown and process images
       const splitted = splitMarkdownIntoChunks(cleanedArticle);
+
       console.log("Augmenting splits");
-      // Process chunks and augment image descriptions
-      // Process chunks and augment image descriptions
+
       const processedChunks = await Promise.all(
         splitted.map(async (chunk) => {
           if (chunk.type === "image") {
             const description = await describeImage(chunk.content);
+
             // Skip image if description is null
             if (!description) {
               return null;
             }
+
             return {
               type: "image" as const,
               content: description,
@@ -132,29 +133,18 @@ CLEANED ARTICLE CONTENT
       // First filter out nulls and convert to ContentChunks
       const validChunks = processedChunks
         .filter((chunk): chunk is MarkdownChunk => chunk !== null)
-        .map((chunk) => {
-          // Check if this is a header/title by looking for markdown header syntax
-          const isHeader =
-            chunk.type === "text" && /^#{1,6}\s/.test(chunk.content);
-          if (isHeader) {
-            return {
-              type: "title" as const,
-              content: chunk.content.replace(/^#{1,6}\s/, ""), // Remove header markdown
-            };
-          }
-          return {
-            type:
-              chunk.type === "text" ? ("text" as const) : ("image" as const),
-            content: chunk.content,
-          };
-        });
-      const wavBuffer = await processContentToAudio(validChunks);
+        .map((chunk) => ({
+          type: chunk.type as "text" | "image" | "title",
+          content: chunk.content,
+        }));
+
+      const audioBuffer = await processContentToAudio(validChunks);
 
       // Upload to Google Cloud Storage
       console.log("Uploading audio to bucket");
       try {
-        const file = bucket.file(`audio/${tinyUid}.wav`);
-        await file.save(wavBuffer);
+        const file = bucket.file(`audio/${tinyUid}.mp3`);
+        await file.save(audioBuffer);
 
         // Update status to AUDIO_GENERATED
         article.status = "AUDIO_GENERATED";
@@ -199,7 +189,7 @@ CLEANED ARTICLE CONTENT
         }
 
         // Delete the audio file
-        const file = bucket.file(`${input.articleId}.wav`);
+        const file = bucket.file(`${input.articleId}.mp3`);
         const exists = await file.exists();
         if (exists[0]) {
           await file.delete();
@@ -220,7 +210,7 @@ CLEANED ARTICLE CONTENT
     .input(z.object({ articleId: z.string() }))
     .handler(async ({ input }) => {
       try {
-        const path = `audio/${input.articleId}.wav`;
+        const path = `audio/${input.articleId}.mp3`;
         const file = bucket.file(path);
         const exists = await file.exists();
         if (!exists[0]) {

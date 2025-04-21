@@ -1,4 +1,4 @@
-import { File } from "node_modules/@google-cloud/storage/build/esm/src/file.js";
+import { File } from "@google-cloud/storage";
 
 export async function generateSignedUrl(
   file: File,

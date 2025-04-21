@@ -36,3 +36,6 @@ coverage
 .DS_Store
 *.pem
 Thumbs.db
+
+# Test output files
+.tmp/

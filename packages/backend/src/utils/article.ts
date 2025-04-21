@@ -1,5 +1,5 @@
 export interface MarkdownChunk {
-  type: "text" | "image";
+  type: "text" | "image" | "title";
   content: string;
 }
 
@@ -10,8 +10,24 @@ export function splitMarkdownIntoChunks(markdown: string): MarkdownChunk[] {
 
   for (const line of lines) {
     const imageMatch = line.match(/!\[.*?\]\((.*?)\)/);
+    const titleMatch = line.match(/^(#{1,6})\s(.+)$/);
 
-    if (imageMatch) {
+    if (titleMatch) {
+      // If we have accumulated text, save it as a chunk
+      if (currentChunk.length > 0) {
+        chunks.push({
+          type: "text",
+          content: currentChunk.join("\n"),
+        });
+        currentChunk = [];
+      }
+
+      // Add the title as its own chunk
+      chunks.push({
+        type: "title",
+        content: titleMatch[2] || "", // The title text without the markdown syntax
+      });
+    } else if (imageMatch) {
       // If we have accumulated text, save it as a chunk
       if (currentChunk.length > 0) {
         chunks.push({
@@ -24,7 +40,7 @@ export function splitMarkdownIntoChunks(markdown: string): MarkdownChunk[] {
       // Add the image as its own chunk
       chunks.push({
         type: "image",
-        content: imageMatch[1], // The URL from the markdown image
+        content: imageMatch[1] || "", // The URL from the markdown image
       });
     } else {
       currentChunk.push(line);
