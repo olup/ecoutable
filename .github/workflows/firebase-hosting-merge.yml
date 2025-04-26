@@ -18,11 +18,18 @@ jobs:
         with:
           node-version: 20
           cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Install Frontend Dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: ./packages/frontend
+      - name: Build Frontend
+        run: pnpm build
+        working-directory: ./packages/frontend
+      - name: Deploy to Firebase
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ECOUTABLE }}
           channelId: live
           projectId: ecoutable
+          target: frontend # Assuming 'frontend' is the target name in firebase.json
+          entryPoint: ./packages/frontend # Specifies the root of the frontend package for deployment context
