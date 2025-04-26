@@ -7,8 +7,10 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@pulumi/command": "^1.0.2",
     "@pulumi/docker": "^4.0.0",
     "@pulumi/gcp": "^7.0.0",
-    "@pulumi/pulumi": "^3.0.0"
+    "@pulumi/pulumi": "^3.0.0",
+    "@pulumi/synced-folder": "^0.11.1"
   }
 }

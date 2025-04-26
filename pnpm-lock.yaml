@@ -10,6 +10,9 @@ importers:
 
   infra:
     dependencies:
+      '@pulumi/command':
+        specifier: ^1.0.2
+        version: 1.0.2(typescript@5.6.3)
       '@pulumi/docker':
         specifier: ^4.0.0
         version: 4.6.2(typescript@5.6.3)
@@ -19,6 +22,9 @@ importers:
       '@pulumi/pulumi':
         specifier: ^3.0.0
         version: 3.159.0(typescript@5.6.3)
+      '@pulumi/synced-folder':
+        specifier: ^0.11.1
+        version: 0.11.1(typescript@5.6.3)
     devDependencies:
       '@types/node':
         specifier: ^20.11.0
@@ -1356,6 +1362,9 @@ packages:
   '@protobufjs/utf8@1.1.0':
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
 
+  '@pulumi/command@1.0.2':
+    resolution: {integrity: sha512-1Pge79T3E2bzIAvLXuYI4uczhjpqQYgnpkvLHRag/idyCmhXCV7JP+NOXLA/7RARdr8ftuZL+BEvXpJibju7jA==}
+
   '@pulumi/docker@4.6.2':
     resolution: {integrity: sha512-dMjkR8xkwmYT4mx8GvhQLY4EdmpN6QSDgADXhWaEo5hFxskWqzZUdi/eYlv5OMJPtm3m8V69Q3UOEQAPZPxbyw==}
 
@@ -1376,6 +1385,9 @@ packages:
 
   '@pulumi/query@0.3.0':
     resolution: {integrity: sha512-xfo+yLRM2zVjVEA4p23IjQWzyWl1ZhWOGobsBqRpIarzLvwNH/RAGaoehdxlhx4X92302DrpdIFgTICMN4P38w==}
+
+  '@pulumi/synced-folder@0.11.1':
+    resolution: {integrity: sha512-PiqgIWZE8jpEKEf7CxU5Sjn1rVzjLBR70EjTD5DgJVmv0952pguERD6FWjg34aDmhgsOZHtImbNkXk/9fV3aug==}
 
   '@rollup/rollup-android-arm-eabi@4.37.0':
     resolution: {integrity: sha512-l7StVw6WAa8l3vA1ov80jyetOAEo1FtHvZDbzXDO/02Sq/QVvqlHkYoFwDJPIMj0GKiistsBudfx5tGFnwYWDQ==}
@@ -5196,6 +5208,15 @@ snapshots:
 
   '@protobufjs/utf8@1.1.0': {}
 
+  '@pulumi/command@1.0.2(typescript@5.6.3)':
+    dependencies:
+      '@pulumi/pulumi': 3.159.0(typescript@5.6.3)
+    transitivePeerDependencies:
+      - bluebird
+      - supports-color
+      - ts-node
+      - typescript
+
   '@pulumi/docker@4.6.2(typescript@5.6.3)':
     dependencies:
       '@pulumi/pulumi': 3.159.0(typescript@5.6.3)
@@ -5255,6 +5276,15 @@ snapshots:
       - supports-color
 
   '@pulumi/query@0.3.0': {}
+
+  '@pulumi/synced-folder@0.11.1(typescript@5.6.3)':
+    dependencies:
+      '@pulumi/pulumi': 3.159.0(typescript@5.6.3)
+    transitivePeerDependencies:
+      - bluebird
+      - supports-color
+      - ts-node
+      - typescript
 
   '@rollup/rollup-android-arm-eabi@4.37.0':
     optional: true

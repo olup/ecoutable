@@ -1,6 +1,9 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as gcp from "@pulumi/gcp";
 import * as docker from "@pulumi/docker";
+import * as command from "@pulumi/command";
+import * as synced_folder from "@pulumi/synced-folder";
+import * as path from "path"; // Import path module
 
 // Configurations
 const config = new pulumi.Config();
@@ -61,7 +64,7 @@ const dockerImage = new docker.Image(
   }
 );
 
-// ✅ Create a Cloud Storage bucket
+// ✅ Create a Cloud Storage bucket for backend data
 const bucket = new gcp.storage.Bucket(`${serviceName}-bucket`, {
   location: region,
   uniformBucketLevelAccess: true,
@@ -163,7 +166,9 @@ requiredRoles.serviceAccount.forEach((role) => {
     member: pulumi.interpolate`serviceAccount:${computeServiceAccount.email}`,
   });
 });
+// --- Outputs ---
 
-// ✅ Output the URL of the deployed service and bucket name
-export const url = service.statuses[0].url;
-export const bucketName = bucket.name;
+// ✅ Output the URL of the deployed service, backend bucket name, and frontend website URL
+export const backendUrl = service.statuses[0].url;
+export const backendBucketName = bucket.name; // Bucket for backend data
+// For a custom domain or nicer URL, you'd typically set up a Load Balancer or CDN pointing to the bucket.
